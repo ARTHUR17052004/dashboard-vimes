@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Painel de Controle VIMES</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f6f9;
+        }
+
+        .dashboard {
+            width: 900px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+        }
+
+        .grafico-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>Painel de Controle VIMES</h1>
+
+    <select id="seletorAno">
+        <option value="2020">2020</option>
+        <option value="2021">2021</option>
+        <option value="2022">2022</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+    </select>
+
+    <select id="seletorVime">
+    <option value="VIME I">VIME I</option>
+    <option value="VIME II">VIME II</option>
+    <option value="VIME III">VIME III</option>
+    <option value="VIME IV">VIME IV</option>
+    <option value="VIME V">VIME V</option>
+    <option value="VIME VI">VIME VI</option>
+    <option value="VIME VII">VIME VII</option>
+</select>
+
+    <div class="grafico-container">
+        <canvas id="graficoBarras"></canvas>
+    </div>
+
+    <div class="grafico-container">
+        <canvas id="graficoLinha"></canvas>
+    </div>
+</div>
+
+<script>
+let graficoBarras;
+let graficoLinha;
+
+function carregarDados() {
+
+    const ano = document.getElementById("seletorAno").value;
+    const vime = document.getElementById("seletorVime").value;
+
+    fetch(`/resumo/${ano}/${vime}`)
+        .then(response => response.json())
+        .then(data => {
+
+            if (graficoBarras) graficoBarras.destroy();
+            if (graficoLinha) graficoLinha.destroy();
+
+            const ctx1 = document.getElementById('graficoBarras');
+            const ctx2 = document.getElementById('graficoLinha');
+
+            graficoBarras = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Inadimplentes', 'Vazios', 'Ocupados'],
+                    datasets: [{
+                        data: [
+                            data.inadimplencia_percentual,
+                            data.percentual_vazios,
+                            data.percentual_ocupados
+                        ],
+                        backgroundColor: ['#e74c3c', '#f39c12', '#2ecc71']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+
+            graficoLinha = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+                    datasets: [{
+                        label: 'Evolução da Inadimplência (%)',
+                        data: data.evolucao,
+                        borderColor: '#3498db',
+                        fill: false,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+
+        });
+}
+
+document.getElementById("seletorAno").addEventListener("change", carregarDados);
+document.getElementById("seletorVime").addEventListener("change", carregarDados);
+
+carregarDados();
+</script>
+
+</body>
+</html>
